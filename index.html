@@ -201,7 +201,7 @@ color: green;
 <button class="sec-button" id="btnR" onclick="openSection('R')">Process Safety</button><br>
 <button class="sec-button" id="btnS" onclick="openSection('S')">Process Safety</button><br>
 <button class="sec-button" id="btnT" onclick="openSection('T')">Process Safety</button><br>
-    <button class="sec-button" id="btnU" onclick="openSection('U')">For Submit</button><br>
+<button class="sec-button" id="btnU" onclick="openSection('U')">For Submit</button><br>
 
 
 </div>
@@ -2592,6 +2592,7 @@ color: green;
 
     <button class="start-btn" onclick="finishSection()">Finish Section</button>
 </div>
+
 <!-- SECTION U -->
 <div class="container" id="sectionU" style="display:none;">
     <h1>For Submit</h1>
@@ -2837,7 +2838,41 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+function forceSubmitCurrentSection(reason) {
+  if (!activeSection || alreadySubmitted) return;
 
+  alert(reason + "\nOnly the current section will be submitted.");
+
+  sections[activeSection].done = true;
+
+  for (let i = sections[activeSection].start; i <= sections[activeSection].end; i++) {
+    document.querySelectorAll(`input[name="q${i}"]`)
+      .forEach(r => (r.disabled = true));
+  }
+
+  const secDiv = document.getElementById("section" + activeSection);
+  if (secDiv) secDiv.style.display = "none";
+
+  activeSection = null;
+
+  pauseCountdown();
+  stopSnapshots();
+
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+
+  saveProgress();
+  updateSectionButtonsUI();
+
+  // ✅ FIX: prevent re-submission loop
+  if (allSectionsCompleted() && !alreadySubmitted) {
+    submitTest();
+    return;
+  }
+
+  sectionMenu.style.display = "block";
+}
 
 /* ===================== START TEST ===================== */
 async function startTest() {
@@ -2960,12 +2995,12 @@ function stopSnapshots() {
 
 /* ===================== OPEN SECTION ===================== */
 async function openSection(sec) {
-const saved = getSavedData(lockedEmail);
+  const saved = getSavedData(lockedEmail);
+
+  // ✅ Only block completed sections (NOT whole test)
   if (sections[sec].done) {
     return alert("This section is already completed and locked.");
   }
-  
-  
 
   try {
     await document.documentElement.requestFullscreen();
@@ -2977,10 +3012,10 @@ const saved = getSavedData(lockedEmail);
   activeSection = sec;
   sectionMenu.style.display = "none";
   document.getElementById("section" + sec).style.display = "block";
-  startCountdown();
-startSnapshots();
-}
 
+  startCountdown();
+  startSnapshots();
+}
 /* ===================== FINISH SECTION ===================== */
 function finishSection() {
   if (!activeSection) return;
@@ -2999,68 +3034,25 @@ function finishSection() {
     btn.style.background = "#16a34a";
   }
 
-document.getElementById("section" + activeSection).style.display = "none";
-activeSection = null;
-
-/* 🔴 PAUSE TIMER WHEN SECTION ENDS */
-pauseCountdown();
-stopSnapshots();
-if (document.fullscreenElement)
-  document.exitFullscreen().catch(()=>{});
-
-
-saveProgress();
-
-if (allSectionsCompleted()) {
-  submitTest();           // ✅ FORCE final submission
-  return;
-}
-
-sectionMenu.style.display = "block";}
-
-function forceSubmitCurrentSection(reason) {
-  if (!activeSection || alreadySubmitted) return;
-
-  alert(reason + "\nOnly the current section will be submitted.");
-
-  // Mark section as done
-  sections[activeSection].done = true;
-
-  // Disable questions in this section
-  for (
-    let i = sections[activeSection].start;
-    i <= sections[activeSection].end;
-    i++
-  ) {
-    document
-      .querySelectorAll(`input[name="q${i}"]`)
-      .forEach(r => (r.disabled = true));
-  }
-
-  // Hide section
-  const secDiv = document.getElementById("section" + activeSection);
-  if (secDiv) secDiv.style.display = "none";
-
+  document.getElementById("section" + activeSection).style.display = "none";
   activeSection = null;
 
   pauseCountdown();
   stopSnapshots();
 
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
-  }
+  if (document.fullscreenElement)
+    document.exitFullscreen().catch(()=>{});
 
   saveProgress();
-  updateSectionButtonsUI();
-  // 🔴 ✅ THIS IS THE MISSING LOGIC
-  if (allSectionsCompleted()) {
+
+  // ✅ FIX: prevent re-submission bug
+  if (allSectionsCompleted() && !alreadySubmitted) {
     submitTest();
     return;
   }
 
   sectionMenu.style.display = "block";
 }
-
 
 /* ===================== SAVE / RESTORE ===================== */
 function saveProgress() {
@@ -3115,27 +3107,34 @@ function saveAndExit() {
 function restoreProgress(data) {
   timeLeft = data.timeLeft || TOTAL_TIME;
 
-  Object.entries(data.sections || {}).forEach(([k,v]) => {
-    sections[k].done = v.done;
+  // ✅ Restore sections safely
+  Object.entries(sections).forEach(([key, val]) => {
+    sections[key].done = data.sections?.[key]?.done || false;
   });
 
-  Object.entries(data.answers || {}).forEach(([q,v]) => {
+  // ✅ Restore answers
+  Object.entries(data.answers || {}).forEach(([q, v]) => {
     const i = document.querySelector(`input[name="${q}"][value="${v}"]`);
     if (i) i.checked = true;
   });
 
-  // ✅ repaint buttons
-  updateSectionButtonsUI();
-alreadySubmitted = data.submitted === true;
-}
+  // ✅ IMPORTANT: Ignore old submission lock
+  alreadySubmitted = false;
 
+  // ✅ Ensure NEW sections (like U) are always available
+  Object.keys(sections).forEach(sec => {
+    if (!data.sections || !(sec in data.sections)) {
+      sections[sec].done = false;
+    }
+  });
+
+  updateSectionButtonsUI();
+}
 
 /* ===================== SUBMIT ===================== */
 
 
 function submitTest() {
-  pauseCountdown();
-  stopSnapshots();
   if (alreadySubmitted) return;
   alreadySubmitted = true;
  
@@ -3428,17 +3427,4 @@ sectionT: sectionT_score,
   fetch(WEB_APP_URL, {
     method: "POST",
     mode: "no-cors",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: formData.toString()
-  });
-
-  const prev = getSavedData(lockedEmail) || {};
-  saveData(lockedEmail, { ...prev, submitted: true });
-}
-
-
-</script>
-
-
-</body>
-</html>
+    headers: { "Co
