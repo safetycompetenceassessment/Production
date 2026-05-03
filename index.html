@@ -201,6 +201,7 @@ color: green;
 <button class="sec-button" id="btnR" onclick="openSection('R')">Process Safety</button><br>
 <button class="sec-button" id="btnS" onclick="openSection('S')">Process Safety</button><br>
 <button class="sec-button" id="btnT" onclick="openSection('T')">Process Safety</button><br>
+    <button class="sec-button" id="btnU" onclick="openSection('U')">For Submit</button><br>
 
 
 </div>
@@ -2591,6 +2592,29 @@ color: green;
 
     <button class="start-btn" onclick="finishSection()">Finish Section</button>
 </div>
+<!-- SECTION U -->
+<div class="container" id="sectionU" style="display:none;">
+    <h1>For Submit</h1>
+    <h3 class="timer" style="color:red; font-size:20px; font-weight:bold;">
+        Time Left: 10:00
+    </h3>
+
+    <!-- Q1 -->
+    <div class="question">
+        <p>For Submit</p>
+     
+        <label>
+            <input type="radio" name="q150"
+                   value="submit"
+                   data-correct="submit">
+           submit
+        </label>
+        
+    </div>
+
+   
+    <button class="start-btn" onclick="finishSection()">Finish Section</button>
+</div>
 
 
 <!-- THANK YOU PAGE -->
@@ -2625,7 +2649,8 @@ P: "Radiation Safety",
 Q: "HSE-IMS",
 R: "Process Safety",
 S: "Drop Objects",
-T: "Production"
+T: "Production",
+U: "For Submit"
 };
 
 function updateSectionButtonsUI() {
@@ -2739,7 +2764,8 @@ P: { start: 98, end: 109, done: false },
 Q: { start: 110, end: 114, done: false },
 R: { start: 115, end: 130, done: false },
 S: { start: 131, end: 135, done: false },
-T: { start: 136, end: 149, done: false }
+T: { start: 136, end: 149, done: false },
+U: { start: 150, end: 150, done: false }
 };
 
 const allSectionsCompleted = () =>
@@ -3133,7 +3159,7 @@ function submitTest() {
     document.exitFullscreen().catch(()=>{});
 
   sectionMenu.style.display = "none";
-  ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T"].forEach(s => {
+  ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U"].forEach(s => {
     const el = document.getElementById("section" + s);
     if (el) el.style.display = "none";
   });
