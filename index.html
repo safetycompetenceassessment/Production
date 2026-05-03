@@ -2961,13 +2961,9 @@ function stopSnapshots() {
 /* ===================== OPEN SECTION ===================== */
 async function openSection(sec) {
 const saved = getSavedData(lockedEmail);
-  if (saved?.submitted) {
-    return alert("Test already submitted. Sections are locked.");
+  if (sections[sec].done) {
+    return alert("This section is already completed and locked.");
   }
-
-   if (saved?.submitted && sections[sec].done) {
-  return alert("This section is already completed and locked.");
-}
   
   
 
