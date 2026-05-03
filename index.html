@@ -2946,44 +2946,95 @@ function recoverAttempt() {
 
   const saved = getSavedData(email);
 
-  if (!saved) {
-    alert("No saved attempt found on this device.");
+  if (!saved || !saved.answers) {
+    alert("No saved attempt found.");
     return;
   }
 
-  if (!saved.answers || Object.keys(saved.answers).length === 0) {
-    alert("No answers found to recover.");
-    return;
+  if (!confirm("Recover and submit previous attempt?")) return;
+
+  // ✅ QUESTIONS COUNT
+  let total = 0;
+
+  let sectionA_score = 0, sectionB_score = 0, sectionC_score = 0,
+      sectionD_score = 0, sectionE_score = 0, sectionF_score = 0,
+      sectionG_score = 0, sectionH_score = 0, sectionI_score = 0,
+      sectionJ_score = 0, sectionK_score = 0, sectionL_score = 0,
+      sectionM_score = 0, sectionN_score = 0, sectionO_score = 0,
+      sectionP_score = 0, sectionQ_score = 0, sectionR_score = 0,
+      sectionS_score = 0, sectionT_score = 0;
+
+  for (let i = 1; i <= 149; i++) {
+    const selected = saved.answers["q" + i];
+
+    const correctEl = document.querySelector(`input[name="q${i}"][data-correct]`);
+    const correct = correctEl ? correctEl.value : null;
+
+    if (selected && correct && selected === correct) {
+      total++;
+
+      if (i <= 6) sectionA_score++;
+      else if (i <= 11) sectionB_score++;
+      else if (i <= 21) sectionC_score++;
+      else if (i <= 29) sectionD_score++;
+      else if (i <= 37) sectionE_score++;
+      else if (i <= 43) sectionF_score++;
+      else if (i <= 53) sectionG_score++;
+      else if (i <= 58) sectionH_score++;
+      else if (i <= 64) sectionI_score++;
+      else if (i <= 72) sectionJ_score++;
+      else if (i <= 77) sectionK_score++;
+      else if (i <= 84) sectionL_score++;
+      else if (i <= 88) sectionM_score++;
+      else if (i <= 92) sectionN_score++;
+      else if (i <= 97) sectionO_score++;
+      else if (i <= 109) sectionP_score++;
+      else if (i <= 114) sectionQ_score++;
+      else if (i <= 130) sectionR_score++;
+      else if (i <= 135) sectionS_score++;
+      else sectionT_score++;
+    }
   }
 
-  if (!confirm("We found a previous attempt. Do you want to recover and submit it?")) {
-    return;
-  }
-
-  // ✅ Prepare recovery data
+  // ✅ SEND SAME STRUCTURE AS NORMAL SUBMIT
   const formData = new URLSearchParams({
     name: document.getElementById("username").value || "Recovered User",
     email: email,
     designation: document.getElementById("designation").value || "N/A",
-    answers: JSON.stringify(saved.answers),
-    timeLeft: saved.timeLeft || 0,
+
+    sectionA: sectionA_score,
+    sectionB: sectionB_score,
+    sectionC: sectionC_score,
+    sectionD: sectionD_score,
+    sectionE: sectionE_score,
+    sectionF: sectionF_score,
+    sectionG: sectionG_score,
+    sectionH: sectionH_score,
+    sectionI: sectionI_score,
+    sectionJ: sectionJ_score,
+    sectionK: sectionK_score,
+    sectionL: sectionL_score,
+    sectionM: sectionM_score,
+    sectionN: sectionN_score,
+    sectionO: sectionO_score,
+    sectionP: sectionP_score,
+    sectionQ: sectionQ_score,
+    sectionR: sectionR_score,
+    sectionS: sectionS_score,
+    sectionT: sectionT_score,
+
+    totalScore: total,
     recovered: "YES",
     timestamp: new Date().toISOString()
   });
 
-  // ✅ Send safely (works even if user closes tab)
-  const success = navigator.sendBeacon(WEB_APP_URL, formData);
+  navigator.sendBeacon(WEB_APP_URL, formData);
 
-  if (success) {
-    alert("Recovered attempt submitted successfully.");
+  saveData(email, { ...saved, submitted: true });
 
-    // mark as submitted
-    saveData(email, { ...saved, submitted: true });
-
-  } else {
-    alert("Recovery failed. Please check your internet and try again.");
-  }
+  alert("Recovered attempt submitted successfully.");
 }
+
 /* ===================== OPEN SECTION ===================== */
 async function openSection(sec) {
 const saved = getSavedData(lockedEmail);
