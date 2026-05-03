@@ -2965,9 +2965,10 @@ const saved = getSavedData(lockedEmail);
     return alert("Test already submitted. Sections are locked.");
   }
 
-  if (sections[sec].done) {
-    return alert("This section is already completed and locked.");
-  }
+   if (saved?.submitted && sections[sec].done) {
+  return alert("This section is already completed and locked.");
+}
+  
   
 
   try {
