@@ -167,7 +167,11 @@ color: green;
     <label><b>Designation:</b></label><br>
     <input id="designation" style="padding:8px;width:60%;margin:8px 0;background-color: #FFF8DC;"><br></p>
  </div>
-    <button class="start-button" onclick="startTest()">Start Test</button>
+    <button class="start-button" onclick="startTest()">Start Test</button><br>
+    <button onclick="recoverAttempt()" style="background:#f59e0b;color:white;padding:10px;border:none;border-radius:6px;">
+  Recover Previous Attempt
+</button>
+
  <div class="footer-note">
       Read the instructions carefully before starting the test.
     </div>
@@ -2931,7 +2935,55 @@ function stopSnapshots() {
     snapInterval = null;
   }
 }
+function recoverAttempt() {
+  const emailInput = document.getElementById("userEmail");
+  const email = emailInput.value.trim().toLowerCase();
 
+  if (!email) {
+    alert("Enter your email first.");
+    return;
+  }
+
+  const saved = getSavedData(email);
+
+  if (!saved) {
+    alert("No saved attempt found on this device.");
+    return;
+  }
+
+  if (!saved.answers || Object.keys(saved.answers).length === 0) {
+    alert("No answers found to recover.");
+    return;
+  }
+
+  if (!confirm("We found a previous attempt. Do you want to recover and submit it?")) {
+    return;
+  }
+
+  // ✅ Prepare recovery data
+  const formData = new URLSearchParams({
+    name: document.getElementById("username").value || "Recovered User",
+    email: email,
+    designation: document.getElementById("designation").value || "N/A",
+    answers: JSON.stringify(saved.answers),
+    timeLeft: saved.timeLeft || 0,
+    recovered: "YES",
+    timestamp: new Date().toISOString()
+  });
+
+  // ✅ Send safely (works even if user closes tab)
+  const success = navigator.sendBeacon(WEB_APP_URL, formData);
+
+  if (success) {
+    alert("Recovered attempt submitted successfully.");
+
+    // mark as submitted
+    saveData(email, { ...saved, submitted: true });
+
+  } else {
+    alert("Recovery failed. Please check your internet and try again.");
+  }
+}
 /* ===================== OPEN SECTION ===================== */
 async function openSection(sec) {
 const saved = getSavedData(lockedEmail);
